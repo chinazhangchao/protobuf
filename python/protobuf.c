@@ -31,13 +31,15 @@
 typedef struct {
 #ifdef ENABLE_MUTEX
   pthread_mutex_t mutex;
+#else
+  char unused;
 #endif
 } FreeThreadingMutex;
 
 #ifdef ENABLE_MUTEX
 static FreeThreadingMutex obj_cache_mutex = {PTHREAD_MUTEX_INITIALIZER};
 #else
-static FreeThreadingMutex obj_cache_mutex = {};
+static FreeThreadingMutex obj_cache_mutex = {0};
 #endif
 
 static upb_Arena* PyUpb_NewArena(void);

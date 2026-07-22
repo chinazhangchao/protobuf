@@ -10,9 +10,9 @@
 
 import glob
 import os
-import sys
 
 from setuptools import setup, Extension, find_namespace_packages
+from setuptools.command.build_ext import build_ext
 
 
 def GetVersion():
@@ -31,11 +31,18 @@ def GetVersion():
     return file_globals["__version__"]
 
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-extra_link_args = []
+class _BuildExt(build_ext):
 
-if sys.platform.startswith('win'):
-  extra_link_args = ['-static']
+  def build_extensions(self):
+    if self.compiler.compiler_type == 'mingw32':
+      for extension in self.extensions:
+        extension.extra_link_args = (
+            extension.extra_link_args or []
+        ) + ['-static']
+    super().build_extensions()
+
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # If at some point the fasttable decoder is ready for prime time, we could
 # enable it here. But even then we'll need to disable it on platforms where
@@ -79,13 +86,13 @@ setup(
     ],
     packages=find_namespace_packages(include=['google*']),
     install_requires=[],
+    cmdclass={'build_ext': _BuildExt},
     ext_modules=[
         Extension(
             'google._upb._message',
             srcs,
             include_dirs=[current_dir, os.path.join(current_dir, 'utf8_range')],
             language='c',
-            extra_link_args=extra_link_args,
         )
     ],
     python_requires='>=3.10',
